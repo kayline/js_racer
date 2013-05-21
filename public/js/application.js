@@ -8,49 +8,41 @@ $(document).ready(function() {
 
   var game_id = $('.game_id').attr('name');
 
-  var counter1 = $('#player1_strip').find('td').length;
-  var counter2 = $('#player1_strip').find('td').length;
-  var timer_start = new Date().getTime()
+  var players = $('.racer_table').find('tr').length;
+
+  var counters = [];
+  for (var i = 0; i < players; ++i) {
+    counters[i] = $('#player1_strip').find('td').length;
+  }
+  var timer_start  = new Date().getTime();
 
   $(document).on('keyup', function(event) {
+    var n = event.keyCode - 48;
+
     if (($('.finished').text() === "") && ($('.countdown').text() === 'Go!') ) {
-      if(event.keyCode === 49) {
-        update_player_position('player1');
-        counter1 --;
-        if (counter1 === 1 ) {
-          $('.finished').text("Player 1 wins!!");
-          var timer_finish = new Date().getTime()
-          $.ajax ({
-            type: 'post',
-            url: '/finish',
-            data: {'winner': '1', "game_id": game_id, "time": timer_finish - timer_start }
-          });
-        };
-      };
-      if(event.keyCode === 50) {
-        update_player_position('player2')
-        counter2 --;
-        if (counter2 === 1) {
-          $('.finished').text("Player 2 wins!!");
-          var timer_finish = new Date().getTime()
-          $.ajax ({
-            type: 'post',
-            url: '/finish',
-            data: {'winner': '2', "game_id": game_id, "time": timer_finish - timer_start }
-          });
-        };
+      update_player_position("player" + n);
+      counters[n - 1]--;
+      if (counters[n - 1] === 1 ) {
+        $('.finished').text("Player " + n + " wins!!");
+        var timer_finish = new Date().getTime();
+        $.ajax ({
+          type: 'post',
+          url: '/finish',
+          data: {'winner': n, "game_id": game_id, "time": timer_finish - timer_start }
+        });
       };
     };
-
   });
+
 
   $('.restart').on('click', function(event) {
     $.ajax ({
       type: 'get',
       url: '/'
     })
-    counter1 = $('#player1_strip').find('td').length;
-    counter2 = $('#player1_strip').find('td').length;
+    for (var i = 0; i < players; ++i) {
+      counters[i] = $('#player1_strip').find('td').length;
+    }
     $('.finished').text("");
     $('tr td').removeClass();
     $('tr td:first-child').addClass('active');

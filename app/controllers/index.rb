@@ -3,21 +3,32 @@ get '/' do
   erb :index
 end
 
+post '/' do
+  @players = params[:players].to_i
+  erb :game
+end
 
-post '/' do 
-  @user1 = User.find_or_create_by_name(name: params[:name], email: params[:email])
-  @user2 = User.find_or_create_by_name(name: params[:name2], email: params[:email2])
-  session[:user_id1] = @user1.id
-  session[:user_id2] = @user2.id
+
+post '/game' do 
+  @players = params[:players].to_i
+  @players.times do |i|
+    player = ["name#{i+1}".to_sym,"email#{i+1}".to_sym,"user_id#{i+1}".to_sym]
+    user = User.find_or_create_by_name(name: params[player[0]], email: params[player[1]])
+    session[player[2]] = user.id
+  end
   session[:length] = params[:length]
+  session[:nb_players] = @players
   redirect "/game"
 end
 
 
 get '/game' do 
   @game = Game.create(track_length: session[:length].to_i)
-  @relation1 = GamesUser.create(user_id: session[:user_id1], game_id: @game.id)
-  @relation2 = GamesUser.create(user_id: session[:user_id2], game_id: @game.id)
+  @players = session[:nb_players]
+  @players.times do |i|
+    player = "user_id#{i+1}".to_sym
+    GamesUser.create(user_id: session[player], game_id: @game.id)
+  end
   erb :play
 end
 
@@ -25,15 +36,6 @@ end
 post '/finish' do
   content_type :json
   @game = Game.find(params["game_id"].to_i)
-  p "session #{session.inspect}"
-  p "@game: #{@game.inspect}"
-  p "params #{params.inspect}"
-  if params["winner"] == "1"
-   @winner_id = session[:user_id1]
-  else
-   @winner_id = session[:user_id2]
-  end
-  p "winner id :#{@winner_id}"
+  @winner_id = session[("user_id" + params["winner"]).to_sym]
   @game.update_attributes(winner_id: @winner_id, time: params["time"].to_i)
-  p "@game updated: #{@game.inspect}"
 end
